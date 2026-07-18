@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QR Codes · Brest Night Game</title>
+<link rel="stylesheet" href="css/styles.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  body{ background:#0b0b14; }
+  .qr-grid{ display:grid; grid-template-columns: repeat(auto-fill,minmax(220px,1fr)); gap:16px; }
+  .qr-card{ background:#1b1b28; border:1px solid rgba(255,255,255,.08); border-radius:16px; padding:16px; text-align:center; }
+  .qr-card img, .qr-card canvas{ background:#fff; padding:8px; border-radius:10px; }
+  .qr-card h3{ margin:10px 0 2px; }
+  .qr-card .link{ font-size:.72rem; word-break:break-all; color:#a8a4b8; margin:6px 0; }
+  .copy-btn{ font-size:.75rem; padding:6px 10px; }
+  .section-title{ margin-top:32px; }
+  @media print{
+    body{ background:#fff; color:#000; }
+    .no-print{ display:none !important; }
+    .qr-card{ background:#fff; border:1px solid #ccc; break-inside: avoid; }
+    .qr-card .link{ color:#333; }
+  }
+</style>
+</head>
+<body>
+<div class="container" style="max-width:900px;">
+  <h1>🎟️ QR Codes — Brest Night Game</h1>
+  <p class="dim">Cette page génère automatiquement les QR codes à partir de l'URL réelle du site, une fois déployé (GitHub Pages, Netlify...). En local, les liens pointeront vers ton fichier local — c'est normal pour tester.</p>
+  <div class="row no-print" style="gap:10px;margin-bottom:10px;">
+    <button class="btn btn-sm" onclick="window.print()">🖨️ Imprimer / Exporter en PDF</button>
+  </div>
+
+  <h2 class="section-title">👤 QR Codes personnels (Phase 1)</h2>
+  <div class="qr-grid" id="players-grid"></div>
+
+  <h2 class="section-title">👥 QR Codes / liens d'équipe (Phase 2)</h2>
+  <p class="dim">À garder pour toi : utile si un membre change de téléphone ou perd son lien en cours de soirée.</p>
+  <div class="qr-grid" id="teams-grid"></div>
+
+  <h2 class="section-title no-print">🔑 Panneau admin</h2>
+  <div class="qr-grid no-print" id="admin-grid"></div>
+</div>
+
+<script src="js/data.js"></script>
+<script src="js/qrcodes.js"></script>
+</body>
+</html>
