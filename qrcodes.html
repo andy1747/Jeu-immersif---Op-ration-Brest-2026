@@ -24,7 +24,19 @@
 </style>
 </head>
 <body>
-<div class="container" style="max-width:900px;">
+
+<div class="container" id="qr-login-gate" style="max-width:420px;">
+  <div class="center-screen">
+    <div class="icon-circle">🔐</div>
+    <h1>Accès réservé</h1>
+    <p class="dim">Cette page révèle tous les personnages et toutes les équipes. Mot de passe requis.</p>
+    <input type="password" id="qr-pass" placeholder="Mot de passe" style="max-width:280px;">
+    <button id="qr-login-btn" class="btn-block" style="max-width:280px;">Entrer</button>
+    <p class="dim" id="qr-login-err"></p>
+  </div>
+</div>
+
+<div class="container" id="qr-protected-content" style="max-width:900px; display:none;">
   <h1>🎟️ QR Codes — Brest Night Game</h1>
   <p class="dim">Cette page génère automatiquement les QR codes à partir de l'URL réelle du site, une fois déployé (GitHub Pages, Netlify...). En local, les liens pointeront vers ton fichier local — c'est normal pour tester.</p>
   <div class="row no-print" style="gap:10px;margin-bottom:10px;">
@@ -42,6 +54,7 @@
   <div class="qr-grid no-print" id="admin-grid"></div>
 </div>
 
+<script src="js/firebase-config.js"></script>
 <script src="js/data.js"></script>
 <script src="js/qrcodes.js"></script>
 </body>

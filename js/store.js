@@ -110,15 +110,19 @@ const Store = {
       return () => window.removeEventListener("bng-local-update", handler);
     }
     if (teamId === "*"){
-      return db.collectionGroup("proofs").orderBy("createdAt","desc").onSnapshot(qs => {
+      // Pas de orderBy() ici : une requête collectionGroup triée demande un index
+      // Firestore dédié. On trie côté client à la place, plus simple et fiable.
+      return db.collectionGroup("proofs").onSnapshot(qs => {
         const out = []; qs.forEach(doc => out.push(Object.assign({id:doc.id}, doc.data())));
+        out.sort((a,b)=> (b.createdAt||0) - (a.createdAt||0));
         cb(out);
-      });
+      }, err => console.error("listenProofs(*) error:", err));
     }
-    return db.collection("teams").doc(teamId).collection("proofs").orderBy("createdAt","desc").onSnapshot(qs => {
+    return db.collection("teams").doc(teamId).collection("proofs").onSnapshot(qs => {
       const out = []; qs.forEach(doc => out.push(Object.assign({id:doc.id}, doc.data())));
+      out.sort((a,b)=> (b.createdAt||0) - (a.createdAt||0));
       cb(out);
-    });
+    }, err => console.error("listenProofs("+teamId+") error:", err));
   },
 
   async approveProof(teamId, proofId, missionId, points){

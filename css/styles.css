@@ -42,9 +42,9 @@
   --bg:#1c1409; --bg2:#241a0d; --card:#2d2011; --card-border:rgba(184,115,51,0.35);
   --accent:#b87333; --accent2:#e2c290; --text:#f2e4c8; --text-dim:#c9ad81;
 }
-[data-theme="tomjerry"]{
-  --bg:#120f26; --bg2:#191539; --card:#211c47; --card-border:rgba(255,217,61,0.3);
-  --accent:#ff4d4d; --accent2:#ffd93d; --text:#f5f3ff; --text-dim:#b9b3e0;
+[data-theme="tarzan"]{
+  --bg:#0e1a0c; --bg2:#152410; --card:#1c2e16; --card-border:rgba(124,179,66,0.3);
+  --accent:#7cb342; --accent2:#d4a537; --text:#eef5e1; --text-dim:#a9c398;
   --font-display:'Fredoka', var(--font-main);
 }
 

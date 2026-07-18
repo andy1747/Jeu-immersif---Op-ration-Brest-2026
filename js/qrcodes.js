@@ -24,7 +24,7 @@ function makeCard(container, { title, sub, url }){
   new QRCode(qrDiv, { text: url, width: 160, height: 160, correctLevel: QRCode.CorrectLevel.M });
 }
 
-window.addEventListener("DOMContentLoaded", ()=>{
+function renderAllCodes(){
   const base = baseUrl();
   const playersGrid = document.getElementById("players-grid");
   const teamsGrid = document.getElementById("teams-grid");
@@ -47,4 +47,26 @@ window.addEventListener("DOMContentLoaded", ()=>{
   });
 
   makeCard(adminGrid, { title: "Panneau admin", sub: "Réservé à Andreia", url: base + "admin.html" });
+}
+
+window.addEventListener("DOMContentLoaded", ()=>{
+  // Page protégée par mot de passe : elle révèle tous les personnages et
+  // toutes les équipes, donc on ne l'affiche qu'après authentification.
+  if (sessionStorage.getItem("bng_qr_auth") === "1"){
+    document.getElementById("qr-login-gate").style.display = "none";
+    document.getElementById("qr-protected-content").style.display = "block";
+    renderAllCodes();
+    return;
+  }
+  document.getElementById("qr-login-btn").onclick = ()=>{
+    const val = document.getElementById("qr-pass").value;
+    if (typeof ADMIN_PASSWORD !== "undefined" && val === ADMIN_PASSWORD){
+      sessionStorage.setItem("bng_qr_auth","1");
+      document.getElementById("qr-login-gate").style.display = "none";
+      document.getElementById("qr-protected-content").style.display = "block";
+      renderAllCodes();
+    } else {
+      document.getElementById("qr-login-err").textContent = "Mot de passe incorrect.";
+    }
+  };
 });

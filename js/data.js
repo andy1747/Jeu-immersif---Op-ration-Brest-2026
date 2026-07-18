@@ -82,20 +82,20 @@ const GAME_DATA = {
       },
       missions: ["verre-destin", "defi-hasard", "aventuriers-1", "aventuriers-2", "aventuriers-3", "aventuriers-4", "aventuriers-5", "aventuriers-6", "aventuriers-7", "aventuriers-8"]
     },
-    tomjerry: {
-      id: "tomjerry",
-      nom: "Tom & Jerry",
-      accroche: "Le chat et la souris ne font jamais vraiment équipe... sauf ce soir.",
-      objectif: "Le chat et la souris ne font jamais vraiment équipe... et pourtant, ce soir, il va falloir semer le chaos ensemble pour gagner.",
+    tarzan: {
+      id: "tarzan",
+      nom: "Tarzan & Jane",
+      accroche: "La jungle a ses propres règles. Ce soir, c'est vous qui les écrivez.",
+      objectif: "Survivre à la jungle urbaine de Brest ce soir : suivez votre instinct, marquez votre territoire, et hurlez votre victoire avant les autres.",
       membres: ["fred", "manon"],
-      theme: "tomjerry",
+      theme: "tarzan",
       pouvoir: {
-        nom: "Poursuite Infernale",
-        description: "Une fois dans la soirée, échangez une de vos missions en cours contre une mission déjà débloquée d'une équipe adverse de votre choix.",
+        nom: "Cri de la Jungle",
+        description: "Une fois dans la soirée, échangez une de vos missions en cours contre une mission déjà débloquée d'une équipe adverse de votre choix : la loi de la jungle vous autorise à changer de territoire.",
         type: "echange_mission",
         valeur: 1
       },
-      missions: ["verre-destin", "defi-hasard", "tomjerry-1", "tomjerry-2", "tomjerry-3", "tomjerry-4", "tomjerry-5", "tomjerry-6", "tomjerry-7", "tomjerry-8"]
+      missions: ["verre-destin", "defi-hasard", "tarzan-1", "tarzan-2", "tarzan-3", "tarzan-4", "tarzan-5", "tarzan-6", "tarzan-7", "tarzan-8"]
     }
   },
 
@@ -216,27 +216,27 @@ const GAME_DATA = {
       ]
     },
     fred: {
-      id: "fred", nom: "Fred", team: "tomjerry", personnage: "Tom ou Jerry",
-      univers: "Tom & Jerry",
-      intro: "Tu es TOM ou JERRY, à toi de choisir ton rôle ce soir. Un éternel duo de rivaux-complices qui ne s'arrête jamais de se chamailler... et de s'entraider quand ça compte vraiment.",
+      id: "fred", nom: "Fred", team: "tarzan", personnage: "Tarzan ou Jane",
+      univers: "Tarzan & Jane",
+      intro: "Tu es TARZAN ou JANE, à toi de choisir ton rôle ce soir. Élevé·e loin des codes de la civilisation, tu fais confiance à ton instinct avant tout — et ce soir, ton instinct te dit qu'il te faut un·e partenaire d'aventure.",
       partners: ["manon"],
       indices: [
-        "Votre partenaire a le sens du timing comique, même sans le vouloir.",
-        "Il ou elle adore provoquer gentiment les gens autour d'elle ou de lui.",
-        "Sous des airs chaotiques, il ou elle est étonnamment stratège.",
-        "Repérez qui rit en premier dans un groupe : c'est un bon indice."
+        "Votre partenaire a un instinct plus sûr que n'importe quel plan écrit à l'avance.",
+        "Il ou elle se sent plus à l'aise en pleine nature que dans les conventions.",
+        "Sous des airs sauvages, il ou elle est étonnamment protecteur·rice envers son clan.",
+        "Repérez qui semble toujours prêt·e à improviser un cri de ralliement."
       ]
     },
     manon: {
-      id: "manon", nom: "Manon", team: "tomjerry", personnage: "Tom ou Jerry",
-      univers: "Tom & Jerry",
-      intro: "Tu es TOM ou JERRY, à toi de choisir ton rôle ce soir. Un éternel duo de rivaux-complices qui ne s'arrête jamais de se chamailler... et de s'entraider quand ça compte vraiment.",
+      id: "manon", nom: "Manon", team: "tarzan", personnage: "Tarzan ou Jane",
+      univers: "Tarzan & Jane",
+      intro: "Tu es TARZAN ou JANE, à toi de choisir ton rôle ce soir. Élevé·e loin des codes de la civilisation, tu fais confiance à ton instinct avant tout — et ce soir, ton instinct te dit qu'il te faut un·e partenaire d'aventure.",
       partners: ["fred"],
       indices: [
-        "Votre partenaire ne recule jamais devant une bonne provocation, même risquée.",
-        "Il ou elle a un humour qui désarme complètement ses adversaires.",
-        "Capable de retourner une situation perdue en fou rire général.",
-        "Repérez qui semble toujours prêt à faire une bêtise calculée."
+        "Votre partenaire ne recule jamais devant un territoire inconnu.",
+        "Il ou elle a un sens de l'orientation étonnamment fiable, même en terrain inconnu.",
+        "Capable de rallier tout un groupe autour d'une idée complètement folle.",
+        "Repérez qui semble le plus à l'aise pieds nus ou en liberté."
       ]
     }
   },
@@ -288,7 +288,17 @@ const GAME_DATA = {
     { id: "sd12", texte: "Deviner correctement le métier d'un inconnu présent sur les lieux, en lui posant seulement 3 questions indirectes." },
     { id: "sd13", texte: "Réciter l'alphabet à l'envers en moins de 20 secondes, filmé comme preuve." },
     { id: "sd14", texte: "Convaincre le reste de votre équipe d'un mensonge absurde pendant 5 minutes avant de révéler la vérité." },
-    { id: "sd15", texte: "Créer un surnom de code pour chaque membre des autres équipes et l'utiliser au moins une fois ce soir, sans expliquer pourquoi." }
+    { id: "sd15", texte: "Créer un surnom de code pour chaque membre des autres équipes et l'utiliser au moins une fois ce soir, sans expliquer pourquoi." },
+    { id: "sd16", texte: "Convaincre un serveur ou une équipe adverse de trinquer avec vous en prononçant une phrase absurde de votre choix comme toast." },
+    { id: "sd17", texte: "Imiter la démarche ou la voix d'un membre de votre propre équipe pendant 30 secondes, sans le prévenir à l'avance." },
+    { id: "sd18", texte: "Faire deviner un film à une équipe adverse uniquement par des bruitages, sans aucun mot, en moins d'une minute." },
+    { id: "sd19", texte: "Obtenir d'un inconnu qu'il vous donne une note sur 10 pour votre déguisement ou votre personnage, sans lui expliquer le jeu." },
+    { id: "sd20", texte: "Composer une phrase d'accroche digne d'un James Bond et la ressortir à voix haute au moment où on s'y attend le moins." },
+    { id: "sd21", texte: "Faire un compliment tellement exagéré à un membre d'une autre équipe qu'iel doit deviner que c'est un défi." },
+    { id: "sd22", texte: "Marcher au ralenti façon film d'action pendant 15 secondes devant au moins deux personnes extérieures au jeu." },
+    { id: "sd23", texte: "Trouver quelqu'un du groupe qui accepte d'échanger sa boisson contre la vôtre sans lui dire pourquoi." },
+    { id: "sd24", texte: "Raconter une fausse anecdote personnelle totalement improbable à un inconnu, avec un aplomb total, sans rire." },
+    { id: "sd25", texte: "Faire applaudir un groupe d'inconnus pour une raison inventée sur le moment." }
   ],
 
   // ---------------------------------------------------------------
@@ -298,8 +308,8 @@ const GAME_DATA = {
 
     // ===================== LA CASA DE PAPEL =====================
     "casa-1": { id: "casa-1", team: "casa", titre: "Repérage des lieux", points: 10,
-      description: "Avant la fin de la première étape, obtenez discrètement le prénom réel ET le personnage d'un membre d'une équipe adverse, sans jamais lui dire pourquoi vous le demandez.",
-      preuve: "Annoncez ce nom en secret à l'organisatrice (message).", penalite: "-5 si vous êtes surpris à espionner ouvertement." },
+      description: "Avant la fin de la première étape, découvrez discrètement le score actuel (même approximatif) d'une équipe adverse, sans jamais lui demander directement combien de points elle a.",
+      preuve: "Annoncez le score obtenu en secret à l'organisatrice (message), qui confirme si c'est proche ou correct.", penalite: "-5 si vous êtes surpris à espionner ouvertement." },
     "casa-2": { id: "casa-2", team: "casa", titre: "Le Faux Plan", points: 10,
       description: "Faites croire à une équipe adverse qu'une fausse règle du jeu existe, et obtenez qu'elle l'applique au moins une fois.",
       preuve: "Décrivez la manœuvre et son résultat à l'organisatrice.", penalite: "Aucune si la tentative échoue, juste pas de points." },
@@ -350,8 +360,8 @@ const GAME_DATA = {
 
     // ===================== BATMAN & ROBIN =====================
     "batman-1": { id: "batman-1", team: "batman", titre: "Dossier Gotham", points: 10,
-      description: "Identifiez discrètement les personnages (pas les prénoms) des quatre autres équipes en observant les indices échangés autour de vous, sans poser de question directe.",
-      preuve: "Liste soumise à l'organisatrice.", penalite: "Aucune." },
+      description: "Découvrez, pour chacune des quatre autres équipes, combien de missions elle a déjà validées, sans jamais leur demander directement leur avancement.",
+      preuve: "Liste soumise à l'organisatrice, qui confirme si c'est exact ou proche.", penalite: "Aucune." },
     "batman-2": { id: "batman-2", team: "batman", titre: "Filature", points: 10, duree: "10 min",
       description: "Suivez discrètement les déplacements d'une équipe adverse pendant dix minutes sans vous faire repérer, et rapportez trois informations précises sur ce qu'elle a fait.",
       preuve: "Rapport des trois informations à l'organisatrice.", penalite: "Aucune." },
@@ -400,30 +410,30 @@ const GAME_DATA = {
       description: "Mission finale : rassemblez trois « indices de relique » dispersés dans la soirée (obtenus via énigmes, pouvoirs ou négociations) pour réclamer le bonus de la Relique.",
       preuve: "Les trois indices présentés à l'organisatrice.", penalite: "Aucune." },
 
-    // ===================== TOM & JERRY =====================
-    "tomjerry-1": { id: "tomjerry-1", team: "tomjerry", titre: "Le Fromage Piégé", points: 10,
-      description: "Tendez un piège inoffensif et drôle à une autre équipe (fausse règle, faux gage) et obtenez qu'elle morde à l'hameçon.",
-      preuve: "Récit de la manœuvre et de son résultat.", penalite: "Aucune si la tentative échoue." },
-    "tomjerry-2": { id: "tomjerry-2", team: "tomjerry", titre: "Course-Poursuite", points: 10,
-      description: "Provoquez un petit défi de rapidité absurde avec une équipe adverse (sans se presser dangereusement), validé par un témoin.",
-      preuve: "Témoignage du résultat.", penalite: "Aucune." },
-    "tomjerry-3": { id: "tomjerry-3", team: "tomjerry", titre: "Détournement", points: 10,
-      description: "Détournez discrètement l'attention d'une équipe adverse pendant qu'un de ses membres tente de valider une mission, pour la ralentir (sans toucher à ses affaires).",
-      preuve: "Récit de la manœuvre.", penalite: "Aucune." },
-    "tomjerry-4": { id: "tomjerry-4", team: "tomjerry", titre: "Provocation Amusante", points: 20,
-      description: "Lancez un défi public et drôle à une équipe adverse qu'elle doit relever ou refuser publiquement.",
-      preuve: "Récit du défi lancé et de la réaction.", penalite: "Aucune." },
-    "tomjerry-5": { id: "tomjerry-5", team: "tomjerry", titre: "Sabotage Léger", points: 20,
-      description: "Glissez un faux indice ou une fausse information à une équipe adverse concernant une mission ou un pouvoir, assez crédible pour qu'elle morde.",
-      preuve: "Récit de la manœuvre et de son effet.", penalite: "Aucune." },
-    "tomjerry-6": { id: "tomjerry-6", team: "tomjerry", titre: "Le Retournement", points: 20,
-      description: "Faites-vous piéger volontairement par une autre équipe, puis retournez la situation à votre avantage dans la même heure.",
-      preuve: "Récit complet du retournement.", penalite: "Aucune." },
-    "tomjerry-7": { id: "tomjerry-7", team: "tomjerry", titre: "Chat et Souris", points: 30, duree: "15 min",
-      description: "Un membre de votre équipe devient « le chat » et doit repérer, sans le demander, où se trouve un membre désigné d'une équipe adverse (tiré au sort par l'organisatrice), en rapportant trois observations exactes.",
-      preuve: "Observations validées par l'organisatrice.", penalite: "Aucune." },
-    "tomjerry-8": { id: "tomjerry-8", team: "tomjerry", titre: "Chaos Final", points: 30,
-      description: "Mission finale : déclenchez au moins trois petits « grains de sable » chez trois équipes différentes pendant la soirée (faux indice, détournement, provocation, piège) et faites-les tous valider a posteriori.",
+    // ===================== TARZAN & JANE =====================
+    "tarzan-1": { id: "tarzan-1", team: "tarzan", titre: "Cri de la Jungle", points: 10,
+      description: "Poussez le cri de Tarzan à un moment totalement inattendu, assez fort pour qu'au moins une personne extérieure au jeu réagisse visiblement.",
+      preuve: "Vidéo courte ou témoin extérieur.", penalite: "Aucune." },
+    "tarzan-2": { id: "tarzan-2", team: "tarzan", titre: "Marquage de Territoire", points: 10, duree: "10 min",
+      description: "Placez discrètement un petit signe (objet, post-it en forme de feuille...) sur la table d'une équipe adverse pour « marquer votre territoire », sans qu'elle s'en aperçoive pendant dix minutes.",
+      preuve: "Photo du signe en place + confirmation qu'il n'a pas été repéré à temps.", penalite: "Aucune." },
+    "tarzan-3": { id: "tarzan-3", team: "tarzan", titre: "Chasse Silencieuse", points: 10, duree: "5 min",
+      description: "Observez une équipe adverse sans faire de bruit ni vous faire repérer pendant cinq minutes, puis rapportez deux informations précises sur ce qu'elle a fait.",
+      preuve: "Rapport des deux informations à l'organisatrice.", penalite: "Aucune." },
+    "tarzan-4": { id: "tarzan-4", team: "tarzan", titre: "Balancement Périlleux", points: 20,
+      description: "Un membre de l'équipe mime Tarzan se balançant à une liane, en pleine rue ou dans un lieu de la soirée, au moment où on l'observe le moins.",
+      preuve: "Vidéo courte.", penalite: "Aucune." },
+    "tarzan-5": { id: "tarzan-5", team: "tarzan", titre: "Duel de Territoire", points: 20,
+      description: "Défiez une équipe adverse à un concours de cris ou de gestes animaliers ; un public extérieur au jeu départage le vainqueur.",
+      preuve: "Témoignage du résultat.", penalite: "Aucune si le duel est perdu, juste pas de points." },
+    "tarzan-6": { id: "tarzan-6", team: "tarzan", titre: "Instinct Sauvage", points: 20,
+      description: "Devinez, par simple observation et sans jamais le demander directement, quelle équipe adverse est en train d'essayer de valider une mission en ce moment même.",
+      preuve: "Réponse soumise à l'organisatrice, qui confirme si c'est exact.", penalite: "Aucune." },
+    "tarzan-7": { id: "tarzan-7", team: "tarzan", titre: "La Loi de la Jungle", points: 30,
+      description: "Négociez un « tribut » (petit service ou petit objet) auprès d'une équipe adverse au nom de la loi de la jungle, et obtenez qu'elle l'accepte.",
+      preuve: "Récit de la négociation et confirmation par l'équipe adverse.", penalite: "Aucune." },
+    "tarzan-8": { id: "tarzan-8", team: "tarzan", titre: "Roi et Reine de la Jungle", points: 30,
+      description: "Mission finale : déclenchez au moins trois petits chaos chez trois équipes différentes pendant la soirée (marquage, instinct, tribut, provocation) et faites-les tous valider a posteriori.",
       preuve: "Les trois manœuvres confirmées par l'organisatrice.", penalite: "Aucune." }
   }
 };

@@ -2,8 +2,8 @@
    APP.JS — logique de l'espace joueur / espace équipe
 =================================================================== */
 
-const TEAM_ORDER = ["casa","potter","batman","aventuriers","tomjerry"];
-const TEAM_EMOJI = { casa:"🎭", potter:"⚡", batman:"🦇", aventuriers:"🗺️", tomjerry:"🐱" };
+const TEAM_ORDER = ["casa","potter","batman","aventuriers","tarzan"];
+const TEAM_EMOJI = { casa:"🎭", potter:"⚡", batman:"🦇", aventuriers:"🗺️", tarzan:"🌴" };
 const FAIL_MESSAGES = [
   "Mauvaise piste, agent. Le plan s'effondre déjà.",
   "Non... et vos partenaires viennent silencieusement de perdre confiance en vous.",
@@ -297,7 +297,7 @@ function paintTeam(teamId, team, data, config){
     html += renderMissionCard(teamId, mid, idx, unlockedCount, completed, config);
   });
 
-  // Missions bonus (échange Tom & Jerry)
+  // Missions bonus (échange Tarzan & Jane)
   if (data.extraMissions && data.extraMissions.length){
     html += `<h2 style="margin-top:22px;">🔀 Missions échangées</h2>`;
     data.extraMissions.forEach(mid=>{

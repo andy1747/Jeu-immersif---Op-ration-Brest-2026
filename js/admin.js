@@ -2,8 +2,8 @@
    ADMIN.JS — panneau organisatrice
 =================================================================== */
 
-const TEAM_ORDER = ["casa","potter","batman","aventuriers","tomjerry"];
-const TEAM_EMOJI = { casa:"🎭", potter:"⚡", batman:"🦇", aventuriers:"🗺️", tomjerry:"🐱" };
+const TEAM_ORDER = ["casa","potter","batman","aventuriers","tarzan"];
+const TEAM_EMOJI = { casa:"🎭", potter:"⚡", batman:"🦇", aventuriers:"🗺️", tarzan:"🌴" };
 
 function $(id){ return document.getElementById(id); }
 function getMissionDef(missionId){ return GAME_DATA.commonMissions[missionId] || GAME_DATA.missions[missionId]; }
@@ -27,6 +27,63 @@ function openModal(innerHTML){
   $("modal-overlay").addEventListener("click", (e)=>{ if(e.target.id==="modal-overlay") closeModal(); });
 }
 function closeModal(){ $("modal-root").innerHTML=""; }
+
+/* ---------------- ALERTES (son + notif + badge onglet) ---------------- */
+let audioCtx;
+function playAlertBeep(){
+  if (localStorage.getItem("bng_admin_sound") === "off") return;
+  try {
+    audioCtx = audioCtx || new (window.AudioContext||window.webkitAudioContext)();
+    const freqs = [520, 780, 520, 780];
+    let t = audioCtx.currentTime;
+    freqs.forEach((f,i)=>{
+      const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
+      o.connect(g); g.connect(audioCtx.destination);
+      o.type = "sine"; o.frequency.setValueAtTime(f, t+i*0.16);
+      g.gain.setValueAtTime(0.001, t+i*0.16);
+      g.gain.exponentialRampToValueAtTime(0.22, t+i*0.16+0.02);
+      g.gain.exponentialRampToValueAtTime(0.001, t+i*0.16+0.14);
+      o.start(t+i*0.16); o.stop(t+i*0.16+0.15);
+    });
+  } catch(e){}
+}
+function notifSupported(){ return typeof Notification !== "undefined"; }
+function notifPermissionState(){ return notifSupported() ? Notification.permission : "unsupported"; }
+async function requestNotifPermission(){
+  if (!notifSupported()) return "unsupported";
+  const p = await Notification.requestPermission();
+  return p;
+}
+function fireNotification(title, body){
+  if (notifSupported() && Notification.permission === "granted"){
+    try { new Notification(title, { body, icon: undefined }); } catch(e){}
+  }
+}
+const ORIGINAL_TITLE = document.title;
+function updateTitleBadge(count){
+  document.title = count>0 ? `🔴(${count}) ${ORIGINAL_TITLE}` : ORIGINAL_TITLE;
+}
+let KNOWN_PENDING_IDS = new Set();
+let FIRST_PROOFS_PASS = true;
+function checkForNewProofs(list){
+  const pending = list.filter(p=>p.status==="pending");
+  updateTitleBadge(pending.length);
+  const currentIds = new Set(pending.map(p=> p.id || (p.teamId+p.createdAt)));
+  if (!FIRST_PROOFS_PASS){
+    const newOnes = pending.filter(p => !KNOWN_PENDING_IDS.has(p.id || (p.teamId+p.createdAt)));
+    if (newOnes.length){
+      playAlertBeep();
+      newOnes.forEach(p=>{
+        const def = getMissionDef(p.missionId);
+        const team = GAME_DATA.teams[p.teamId];
+        fireNotification("📸 Nouvelle preuve à valider", `${team?team.nom:p.teamId} — ${def?def.titre:p.missionId}`);
+      });
+      toast("🔔 Nouvelle preuve", newOnes.length>1 ? `${newOnes.length} preuves en attente` : "Une équipe attend ta validation");
+    }
+  }
+  FIRST_PROOFS_PASS = false;
+  KNOWN_PENDING_IDS = currentIds;
+}
 
 document.addEventListener("DOMContentLoaded", init);
 
@@ -66,19 +123,27 @@ function renderDashboard(){
   if (!listenersStarted){
     listenersStarted = true;
     Store.listenAllTeams(d=>{ TEAMS_CACHE = d; if(document.getElementById('tab-content')) renderTabContent(); });
-    Store.listenProofs("*", d=>{ PROOFS_CACHE = d; if(document.getElementById('tab-content')) renderTabContent(); });
+    Store.listenProofs("*", d=>{ PROOFS_CACHE = d; checkForNewProofs(d); if(document.getElementById('tab-content')) renderTabContent(); });
     Store.listenRequests(d=>{ REQUESTS_CACHE = d; if(document.getElementById('tab-content')) renderTabContent(); });
     Store.listenConfig(d=>{ CONFIG_CACHE = d||{}; if(document.getElementById('tab-content')) renderTabContent(); });
   }
   const pendingCount = PROOFS_CACHE.filter(p=>p.status==="pending").length;
   const reqCount = REQUESTS_CACHE.filter(r=>r.status==="pending").length;
 
+  const notifState = notifPermissionState();
   $("app").innerHTML = `
     <div class="row between" style="margin-bottom:6px;">
       <h1 style="margin:0;">🎛️ Admin</h1>
       <button class="btn-outline btn-sm" id="logout-btn">Se déconnecter</button>
     </div>
     <p class="dim">Brest Night Game — panneau organisatrice</p>
+    ${notifState==="granted" ? `<div class="msg ok">🔔 Notifications activées</div>` : notifState==="unsupported" ? "" : `
+      <div class="card" style="padding:12px 16px;">
+        <div class="row between">
+          <span class="dim">🔔 Reçois une alerte quand une preuve arrive</span>
+          <button class="btn-sm" id="enable-notif-btn">Activer</button>
+        </div>
+      </div>`}
     <div class="tabs">
       <div class="tab" data-tab="scores">🏆 Scores</div>
       <div class="tab" data-tab="proofs">📸 Preuves${pendingCount?` (${pendingCount})`:""}</div>
@@ -90,6 +155,12 @@ function renderDashboard(){
     <div id="tab-content"></div>
   `;
   $("logout-btn").onclick = ()=>{ sessionStorage.removeItem("bng_admin_auth"); renderLogin(); };
+  const notifBtn = $("enable-notif-btn");
+  if (notifBtn) notifBtn.onclick = async ()=>{
+    const p = await requestNotifPermission();
+    if (p === "granted") { toast("🔔 Notifications activées", ""); renderDashboard(); }
+    else toast("Notifications refusées", "Tu peux les activer plus tard dans les réglages de Safari.", "fail");
+  };
   document.querySelectorAll(".tab").forEach(t=>{
     t.onclick = ()=>{ CURRENT_TAB = t.dataset.tab; renderDashboard(); };
   });
@@ -211,12 +282,22 @@ function renderDrawsTab(c){
     </div>
     <div class="card">
       <h3>🎲 Le Défi du Hasard</h3>
-      <p class="dim">Tire un défi surprise unique par équipe parmi les 15.</p>
+      <p class="dim">Tire un défi surprise unique par équipe parmi les ${GAME_DATA.surpriseChallenges.length} (mission commune, une fois en début de soirée).</p>
       <button class="btn-block" id="draw-defi">${CONFIG_CACHE.challengeDrawn ? "Relancer le tirage" : "Lancer le tirage"}</button>
       ${CONFIG_CACHE.challengeDrawn ? `<ul class="indice-list" style="margin-top:10px;">${TEAM_ORDER.map(t=>{
         const ch = GAME_DATA.surpriseChallenges.find(x=>x.id===defi[t]);
         return `<li>${GAME_DATA.teams[t].nom} → ${ch?ch.texte:"?"}</li>`;
       }).join("")}</ul>` : ""}
+    </div>
+    <div class="card">
+      <h3>🎁 Défi bonus aléatoire</h3>
+      <p class="dim">À utiliser autant de fois que tu veux pendant la soirée, pour relancer une équipe qui s'ennuie. Le défi s'affiche chez eux ; valide-le à la main (+10 ou +20) une fois fait, dans l'onglet Scores.</p>
+      <select id="bonus-team">
+        <option value="all">Toutes les équipes (défis différents)</option>
+        ${TEAM_ORDER.map(t=>`<option value="${t}">${GAME_DATA.teams[t].nom}</option>`).join("")}
+      </select>
+      <button class="btn-block" id="draw-bonus">Tirer un défi bonus</button>
+      <p class="dim" id="bonus-result" style="margin-top:8px;"></p>
     </div>
   `;
   $("draw-verre").onclick = async ()=>{
@@ -232,6 +313,19 @@ function renderDrawsTab(c){
       await Store.broadcastEvent(t,"event","🎲 Défi du Hasard", `Votre défi surprise est prêt ! Consultez votre espace mission.`);
     }
     toast("Tirage effectué", "Les défis surprise ont été distribués.");
+  };
+  $("draw-bonus").onclick = async ()=>{
+    const target = $("bonus-team").value;
+    const targets = target === "all" ? TEAM_ORDER : [target];
+    const pool = [...GAME_DATA.surpriseChallenges];
+    const picked = [];
+    for (const t of targets){
+      const ch = pool[Math.floor(Math.random()*pool.length)];
+      picked.push({ team: t, ch });
+      await Store.broadcastEvent(t, "event", "🎁 Défi bonus !", ch.texte);
+    }
+    $("bonus-result").innerHTML = picked.map(p=>`<b>${GAME_DATA.teams[p.team].nom}</b> : ${p.ch.texte}`).join("<br><br>");
+    toast("Défi(s) bonus envoyé(s)", picked.length>1 ? `${picked.length} équipes` : GAME_DATA.teams[picked[0].team].nom);
   };
 }
 
