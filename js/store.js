@@ -16,7 +16,8 @@ function loadLocalDB(){
     const raw = localStorage.getItem(LOCAL_KEY);
     if (raw) return JSON.parse(raw);
   } catch(e){}
-  return { teams:{}, config:{ verreAssignment:{}, challengeAssignment:{}, verreDrawn:false, challengeDrawn:false }, events:[], requests:[] };
+  return { teams:{}, config:{ verreAssignment:{}, challengeAssignment:{}, verreDrawn:false, challengeDrawn:false,
+           minuitTriggered:false, minuitAutoEnabled:false, minuitTriggeredAt:null }, events:[], requests:[], market:[] };
 }
 function saveLocalDB(d){
   localStorage.setItem(LOCAL_KEY, JSON.stringify(d));
@@ -24,7 +25,8 @@ function saveLocalDB(d){
 }
 function defaultTeam(){
   return { score:0, unlockedCount:1, completed:{}, powerUsed:false, powerUsedAt:null,
-           blockedUntil:null, protectedUntil:null, extraMissions:[], log:[], proofs:[] };
+           blockedUntil:null, protectedUntil:null, extraMissions:[], log:[], proofs:[],
+           secretContract:null, minuitFinalUnlocked:false };
 }
 
 const Store = {
@@ -389,7 +391,8 @@ const Store = {
       return () => window.removeEventListener("bng-local-update", handler);
     }
     return db.collection("config").doc("state").onSnapshot(snap => {
-      cb(snap.exists ? snap.data() : { verreAssignment:{}, challengeAssignment:{}, verreDrawn:false, challengeDrawn:false });
+      cb(snap.exists ? snap.data() : { verreAssignment:{}, challengeAssignment:{}, verreDrawn:false, challengeDrawn:false,
+        minuitTriggered:false, minuitAutoEnabled:false, minuitTriggeredAt:null });
     });
   },
 
@@ -433,6 +436,194 @@ const Store = {
       const out = []; qs.forEach(doc => out.push(Object.assign({id:doc.id}, doc.data())));
       cb(out);
     });
+  },
+
+  // ---------------- MISSIONS À CHOIX (risque / sécurité) ----------------
+  async resolveChoiceMission(teamId, missionId, choice, def){
+    const win = choice === "safe" ? true : Math.random() < (def.riskChance != null ? def.riskChance : 0.5);
+    const points = choice === "safe" ? def.safePoints : (win ? def.riskWin : def.riskLose);
+    if (LOCAL_MODE){
+      const d = loadLocalDB();
+      const t = d.teams[teamId] = d.teams[teamId] || defaultTeam();
+      t.completed[missionId] = { status:"done", points, choice, win, timestamp: nowTs() };
+      t.score = Math.max(0, (t.score||0) + points);
+      t.unlockedCount = Math.min(10, (t.unlockedCount||1) + 1);
+      t.log.push({ type: points>=0?"points":"penalite", amount: points, reason:"Mission à choix : "+missionId, timestamp: nowTs() });
+      saveLocalDB(d);
+      return { win, points };
+    }
+    const teamRef = db.collection("teams").doc(teamId);
+    const logRef = teamRef.collection("log").doc();
+    await db.runTransaction(async (tx) => {
+      const snap = await tx.get(teamRef);
+      const team = snap.exists ? snap.data() : defaultTeam();
+      const completed = team.completed || {};
+      completed[missionId] = { status:"done", points, choice, win, timestamp: nowTs() };
+      tx.set(teamRef, {
+        completed,
+        score: Math.max(0, (team.score||0) + points),
+        unlockedCount: Math.min(10, (team.unlockedCount||1) + 1)
+      }, { merge:true });
+      tx.set(logRef, { type: points>=0?"points":"penalite", amount: points, reason:"Mission à choix : "+missionId, timestamp: nowTs() });
+    });
+    return { win, points };
+  },
+
+  // ---------------- MARCHÉ NOIR ----------------
+  async postMarketOffer(teamId, title, description, wants){
+    const offer = { teamId, title, description: description||"", wants: wants||"", status:"open", createdAt: nowTs() };
+    if (LOCAL_MODE){
+      const d = loadLocalDB();
+      offer.id = "m" + nowTs();
+      d.market = d.market || [];
+      d.market.push(offer);
+      saveLocalDB(d);
+      return offer.id;
+    }
+    const ref = await db.collection("market").add(offer);
+    return ref.id;
+  },
+
+  listenMarket(cb){
+    if (LOCAL_MODE){
+      const handler = () => {
+        const d = loadLocalDB();
+        cb([...(d.market||[])].sort((a,b)=>b.createdAt-a.createdAt));
+      };
+      window.addEventListener("bng-local-update", handler);
+      handler();
+      return () => window.removeEventListener("bng-local-update", handler);
+    }
+    return db.collection("market").onSnapshot(qs => {
+      const out = []; qs.forEach(doc => out.push(Object.assign({id:doc.id}, doc.data())));
+      out.sort((a,b)=> (b.createdAt||0) - (a.createdAt||0));
+      cb(out);
+    }, err => console.error("listenMarket error:", err));
+  },
+
+  async closeMarketOffer(offerId){
+    if (LOCAL_MODE){
+      const d = loadLocalDB();
+      const o = (d.market||[]).find(x => x.id === offerId);
+      if (o) o.status = "closed";
+      saveLocalDB(d);
+      return;
+    }
+    await db.collection("market").doc(offerId).set({ status:"closed" }, { merge:true });
+  },
+
+  async expressInterest(offerTeamId, fromTeamId, offerTitle){
+    await Store.broadcastEvent(offerTeamId, "event", "🖤 Intérêt pour votre offre",
+      `Une équipe est intéressée par votre offre du Marché Noir : « ${offerTitle} ». Allez négocier !`);
+  },
+
+  // ---------------- CONTRATS SECRETS ----------------
+  async sendSecretContract(teamId, title, description, points){
+    const contract = { title, description, points, status:"active", sentAt: nowTs() };
+    if (LOCAL_MODE){
+      const d = loadLocalDB(); const t = d.teams[teamId] = d.teams[teamId] || defaultTeam();
+      t.secretContract = contract; saveLocalDB(d); return;
+    }
+    await db.collection("teams").doc(teamId).set({ secretContract: contract }, { merge:true });
+  },
+
+  async submitSecretContractProof(teamId, note){
+    if (LOCAL_MODE){
+      const d = loadLocalDB(); const t = d.teams[teamId] = d.teams[teamId] || defaultTeam();
+      if (t.secretContract){ t.secretContract.status = "pending"; t.secretContract.note = note||""; }
+      saveLocalDB(d); return;
+    }
+    const teamRef = db.collection("teams").doc(teamId);
+    await db.runTransaction(async (tx) => {
+      const snap = await tx.get(teamRef);
+      const team = snap.exists ? snap.data() : defaultTeam();
+      const contract = team.secretContract || null;
+      if (contract){ contract.status = "pending"; contract.note = note||""; }
+      tx.set(teamRef, { secretContract: contract }, { merge:true });
+    });
+  },
+
+  async approveSecretContract(teamId){
+    if (LOCAL_MODE){
+      const d = loadLocalDB(); const t = d.teams[teamId] = d.teams[teamId] || defaultTeam();
+      if (!t.secretContract) return 0;
+      const pts = t.secretContract.points||0;
+      t.score = Math.max(0, (t.score||0) + pts);
+      t.log.push({ type:"points", amount: pts, reason:"Contrat secret : "+t.secretContract.title, timestamp: nowTs() });
+      t.secretContract.status = "done";
+      saveLocalDB(d);
+      return pts;
+    }
+    const teamRef = db.collection("teams").doc(teamId);
+    const logRef = teamRef.collection("log").doc();
+    let pts = 0;
+    await db.runTransaction(async (tx) => {
+      const snap = await tx.get(teamRef);
+      const team = snap.exists ? snap.data() : defaultTeam();
+      const contract = team.secretContract;
+      if (!contract) return;
+      pts = contract.points||0;
+      contract.status = "done";
+      tx.set(teamRef, { secretContract: contract, score: Math.max(0,(team.score||0)+pts) }, { merge:true });
+      tx.set(logRef, { type:"points", amount: pts, reason:"Contrat secret : "+contract.title, timestamp: nowTs() });
+    });
+    return pts;
+  },
+
+  async rejectSecretContract(teamId){
+    if (LOCAL_MODE){
+      const d = loadLocalDB(); const t = d.teams[teamId] = d.teams[teamId] || defaultTeam();
+      if (t.secretContract) t.secretContract.status = "active";
+      saveLocalDB(d); return;
+    }
+    const teamRef = db.collection("teams").doc(teamId);
+    await db.runTransaction(async (tx) => {
+      const snap = await tx.get(teamRef);
+      const team = snap.exists ? snap.data() : defaultTeam();
+      const contract = team.secretContract;
+      if (contract) contract.status = "active";
+      tx.set(teamRef, { secretContract: contract }, { merge:true });
+    });
+  },
+
+  // ---------------- OPÉRATION MINUIT ----------------
+  async setMinuitAuto(enabled){
+    if (LOCAL_MODE){ const d = loadLocalDB(); d.config.minuitAutoEnabled = enabled; saveLocalDB(d); return; }
+    await db.collection("config").doc("state").set({ minuitAutoEnabled: enabled }, { merge:true });
+  },
+
+  async triggerMinuit(teamIds){
+    if (LOCAL_MODE){
+      const d = loadLocalDB();
+      if (d.config.minuitTriggered) return false;
+      d.config.minuitTriggered = true; d.config.minuitTriggeredAt = nowTs();
+      teamIds.forEach(tid => {
+        const t = d.teams[tid] = d.teams[tid] || defaultTeam();
+        t.powerUsed = false; t.powerUsedAt = null; t.protectedUntil = null; t.minuitFinalUnlocked = true;
+      });
+      d.events.push({ target:"all", type:"danger", title:"🚨 OPÉRATION MINUIT 🚨",
+        message:"Le classement est gelé. Toutes les protections tombent. Les pouvoirs sont réutilisables. Une mission finale vient d'apparaître chez chaque équipe. Il vous reste 45 minutes pour tout renverser.",
+        timestamp: nowTs() });
+      saveLocalDB(d);
+      return true;
+    }
+    const configRef = db.collection("config").doc("state");
+    let fired = false;
+    await db.runTransaction(async (tx) => {
+      const snap = await tx.get(configRef);
+      const cfg = snap.exists ? snap.data() : {};
+      if (cfg.minuitTriggered) return;
+      fired = true;
+      tx.set(configRef, { minuitTriggered:true, minuitTriggeredAt: nowTs() }, { merge:true });
+      teamIds.forEach(tid => {
+        tx.set(db.collection("teams").doc(tid), { powerUsed:false, powerUsedAt:null, protectedUntil:null, minuitFinalUnlocked:true }, { merge:true });
+      });
+    });
+    if (fired){
+      await Store.broadcastEvent("all","danger","🚨 OPÉRATION MINUIT 🚨",
+        "Le classement est gelé. Toutes les protections tombent. Les pouvoirs sont réutilisables. Une mission finale vient d'apparaître chez chaque équipe. Il vous reste 45 minutes pour tout renverser.");
+    }
+    return fired;
   }
 };
 

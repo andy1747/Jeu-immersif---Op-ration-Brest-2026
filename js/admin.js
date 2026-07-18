@@ -6,7 +6,7 @@ const TEAM_ORDER = ["casa","potter","batman","aventuriers","tarzan"];
 const TEAM_EMOJI = { casa:"🎭", potter:"⚡", batman:"🦇", aventuriers:"🗺️", tarzan:"🌴" };
 
 function $(id){ return document.getElementById(id); }
-function getMissionDef(missionId){ return GAME_DATA.commonMissions[missionId] || GAME_DATA.missions[missionId]; }
+function getMissionDef(missionId){ return GAME_DATA.commonMissions[missionId] || GAME_DATA.missions[missionId] || GAME_DATA.finalMissions[missionId]; }
 function fmtTime(ts){ return new Date(ts).toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"}); }
 
 function toast(title, message, kind){
@@ -116,8 +116,10 @@ let TEAMS_CACHE = {};
 let PROOFS_CACHE = [];
 let REQUESTS_CACHE = [];
 let CONFIG_CACHE = {};
+let MARKET_CACHE = [];
 let CURRENT_TAB = "scores";
 let listenersStarted = false;
+let minuitAutoFiring = false;
 
 function renderDashboard(){
   if (!listenersStarted){
@@ -126,9 +128,19 @@ function renderDashboard(){
     Store.listenProofs("*", d=>{ PROOFS_CACHE = d; checkForNewProofs(d); if(document.getElementById('tab-content')) renderTabContent(); });
     Store.listenRequests(d=>{ REQUESTS_CACHE = d; if(document.getElementById('tab-content')) renderTabContent(); });
     Store.listenConfig(d=>{ CONFIG_CACHE = d||{}; if(document.getElementById('tab-content')) renderTabContent(); });
+    Store.listenMarket(d=>{ MARKET_CACHE = d; if(document.getElementById('tab-content')) renderTabContent(); });
+    setInterval(async ()=>{
+      if (minuitAutoFiring) return;
+      if (!CONFIG_CACHE.minuitAutoEnabled || CONFIG_CACHE.minuitTriggered) return;
+      if (new Date().getHours() === 0){
+        minuitAutoFiring = true;
+        await Store.triggerMinuit(TEAM_ORDER);
+      }
+    }, 15000);
   }
   const pendingCount = PROOFS_CACHE.filter(p=>p.status==="pending").length;
   const reqCount = REQUESTS_CACHE.filter(r=>r.status==="pending").length;
+  const secretPendingCount = Object.values(TEAMS_CACHE).filter(t=>t.secretContract && t.secretContract.status==="pending").length;
 
   const notifState = notifPermissionState();
   $("app").innerHTML = `
@@ -150,6 +162,9 @@ function renderDashboard(){
       <div class="tab" data-tab="draws">🎲 Tirages</div>
       <div class="tab" data-tab="events">🌩️ Événements</div>
       <div class="tab" data-tab="requests">🧭 Demandes${reqCount?` (${reqCount})`:""}</div>
+      <div class="tab" data-tab="market">🖤 Marché</div>
+      <div class="tab" data-tab="contracts">🕵️ Contrats${secretPendingCount?` (${secretPendingCount})`:""}</div>
+      <div class="tab" data-tab="minuit">🚨 Minuit</div>
       <div class="tab" data-tab="awards">🥇 Récompenses</div>
     </div>
     <div id="tab-content"></div>
@@ -176,6 +191,9 @@ function renderTabContent(){
   if (CURRENT_TAB==="draws") return renderDrawsTab(c);
   if (CURRENT_TAB==="events") return renderEventsTab(c);
   if (CURRENT_TAB==="requests") return renderRequestsTab(c);
+  if (CURRENT_TAB==="market") return renderMarketTab(c);
+  if (CURRENT_TAB==="contracts") return renderContractsTab(c);
+  if (CURRENT_TAB==="minuit") return renderMinuitTab(c);
   if (CURRENT_TAB==="awards") return renderAwardsTab(c);
 }
 
@@ -414,6 +432,113 @@ function renderRequestsTab(c){
     b.closest(".card").style.opacity = ".4";
     b.disabled = true; b.textContent = "Traité ✓";
   });
+}
+
+/* ---------------- MARCHÉ NOIR ---------------- */
+function renderMarketTab(c){
+  if (!MARKET_CACHE.length){ c.innerHTML = `<div class="card"><p class="dim">Aucune offre publiée pour le moment.</p></div>`; return; }
+  const sorted = [...MARKET_CACHE].sort((a,b)=> (a.status==="open"?0:1) - (b.status==="open"?0:1) || b.createdAt-a.createdAt);
+  c.innerHTML = `<div class="card">
+    <p class="dim">Une fois qu'un accord est trouvé en vrai entre deux équipes, marque l'offre comme conclue puis ajuste les points/effets dans l'onglet Scores.</p>
+  </div>` + sorted.map(o=>{
+    const team = GAME_DATA.teams[o.teamId];
+    return `<div class="card ${o.status==='closed'?'':''}" style="${o.status==='closed'?'opacity:.5;':''}">
+      <span class="badge ${o.status==='open'?'':'done'}">${o.status==='open'?'Ouverte':'Conclue'}</span>
+      <h3>${team?team.nom:o.teamId} — ${o.title}</h3>
+      ${o.description ? `<p>${o.description}</p>` : ""}
+      ${o.wants ? `<p class="dim">En échange : ${o.wants}</p>` : ""}
+      ${o.status==='open' ? `<button class="btn-sm btn-success" data-close-offer="${o.id}">Marquer comme conclue</button>` : ""}
+    </div>`;
+  }).join("");
+  document.querySelectorAll("[data-close-offer]").forEach(b=> b.onclick = async ()=>{
+    await Store.closeMarketOffer(b.dataset.closeOffer);
+    toast("Offre conclue", "N'oublie pas d'ajuster les points si besoin.");
+  });
+}
+
+/* ---------------- CONTRATS SECRETS ---------------- */
+function renderContractsTab(c){
+  c.innerHTML = `
+    <div class="card">
+      <h3>Envoyer un contrat secret</h3>
+      <p class="dim">Visible uniquement par l'équipe choisie. Les autres n'en sauront jamais rien.</p>
+      <select id="contract-team">${TEAM_ORDER.map(t=>`<option value="${t}">${GAME_DATA.teams[t].nom}</option>`).join("")}</select>
+      <label>Titre</label>
+      <input type="text" id="contract-title" placeholder="Ex: Retournez une alliance">
+      <label>Description</label>
+      <textarea id="contract-desc" placeholder="Détaille la mission secrète..."></textarea>
+      <label>Points</label>
+      <input type="number" id="contract-points" value="40">
+      <button class="btn-block" id="contract-send-btn">Envoyer le contrat</button>
+    </div>
+  `;
+  const active = TEAM_ORDER.map(t=>({t, c: TEAMS_CACHE[t] && TEAMS_CACHE[t].secretContract})).filter(x=>x.c);
+  if (active.length){
+    c.innerHTML += `<h2 style="margin-top:20px;">Contrats en cours</h2>`;
+    active.forEach(({t,c:contract})=>{
+      c.innerHTML += `<div class="card ${contract.status==='pending'?'pending':''}">
+        <span class="badge ${contract.status==='pending'?'pending':''}">${GAME_DATA.teams[t].nom} · ${contract.status}</span>
+        <h3>${contract.title}</h3>
+        <p>${contract.description}</p>
+        <p class="dim">${contract.points} points${contract.note ? ` · Note : "${contract.note}"` : ""}</p>
+        ${contract.status==='pending' ? `
+          <div class="grid-2">
+            <button class="btn-success btn-sm" data-approve-contract="${t}">✅ Valider (+${contract.points})</button>
+            <button class="btn-danger btn-sm" data-reject-contract="${t}">❌ Refuser</button>
+          </div>` : ""}
+      </div>`;
+    });
+  }
+  $("contract-send-btn").onclick = async ()=>{
+    const team = $("contract-team").value;
+    const title = $("contract-title").value.trim();
+    const desc = $("contract-desc").value.trim();
+    const points = parseInt($("contract-points").value,10) || 0;
+    if (!title) return;
+    await Store.sendSecretContract(team, title, desc, points);
+    toast("🕵️ Contrat envoyé", GAME_DATA.teams[team].nom);
+    renderTabContent();
+  };
+  document.querySelectorAll("[data-approve-contract]").forEach(b=> b.onclick = async ()=>{
+    const pts = await Store.approveSecretContract(b.dataset.approveContract);
+    toast("✅ Contrat validé", `+${pts} pts`);
+  });
+  document.querySelectorAll("[data-reject-contract]").forEach(b=> b.onclick = async ()=>{
+    await Store.rejectSecretContract(b.dataset.rejectContract);
+    toast("Contrat refusé", "L'équipe peut retenter.");
+  });
+}
+
+/* ---------------- OPÉRATION MINUIT ---------------- */
+function renderMinuitTab(c){
+  const triggered = CONFIG_CACHE.minuitTriggered;
+  c.innerHTML = `
+    <div class="card" style="text-align:center;">
+      <h2>🚨 Opération Minuit</h2>
+      <p class="dim">Classement gelé, protections supprimées, pouvoirs réutilisables, mission finale (100 pts) débloquée chez chaque équipe.</p>
+      ${triggered
+        ? `<div class="msg ok">✅ Déclenchée${CONFIG_CACHE.minuitTriggeredAt ? " à " + fmtTime(CONFIG_CACHE.minuitTriggeredAt) : ""}</div>`
+        : `
+          <label style="display:flex;align-items:center;gap:8px;justify-content:center;margin:14px 0;">
+            <input type="checkbox" id="minuit-auto-toggle" ${CONFIG_CACHE.minuitAutoEnabled ? "checked" : ""} style="width:20px;height:20px;">
+            Déclenchement automatique à minuit pile
+          </label>
+          <button class="btn-block btn-danger" id="minuit-trigger-btn">🚨 Déclencher maintenant</button>
+        `}
+    </div>
+  `;
+  const toggle = $("minuit-auto-toggle");
+  if (toggle) toggle.onchange = async ()=>{
+    await Store.setMinuitAuto(toggle.checked);
+    toast(toggle.checked ? "Déclenchement auto activé" : "Déclenchement auto désactivé", "");
+  };
+  const triggerBtn = $("minuit-trigger-btn");
+  if (triggerBtn) triggerBtn.onclick = async ()=>{
+    if (!confirm("Déclencher l'Opération Minuit maintenant ? C'est irréversible pour cette soirée.")) return;
+    await Store.triggerMinuit(TEAM_ORDER);
+    toast("🚨 Opération Minuit déclenchée !", "");
+    renderTabContent();
+  };
 }
 
 /* ---------------- RÉCOMPENSES ---------------- */

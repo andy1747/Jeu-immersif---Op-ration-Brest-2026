@@ -36,6 +36,7 @@ function toggleSound(){ localStorage.setItem("bng_sound", soundEnabled() ? "off"
 let audioCtx;
 function playBeep(kind){
   if (!soundEnabled()) return;
+  if (window.AudioFX && AudioFX.isMuted()) return;
   try {
     audioCtx = audioCtx || new (window.AudioContext||window.webkitAudioContext)();
     const o = audioCtx.createOscillator();
@@ -50,6 +51,53 @@ function playBeep(kind){
     g.gain.exponentialRampToValueAtTime(0.001, t+freqs.length*0.09+0.15);
     o.start(t); o.stop(t+freqs.length*0.09+0.2);
   } catch(e){}
+}
+
+/* ---------------- AMBIANCE (musique procédurale par équipe) ---------------- */
+let ambientEngagedTheme = null;
+function engageAmbient(theme){
+  if (!window.AudioFX || ambientEngagedTheme === theme) return;
+  try{
+    AudioFX.ensureCtx();
+    AudioFX.startAmbient(theme);
+    ambientEngagedTheme = theme;
+  } catch(e){}
+}
+
+/* ---------------- CINÉMATIQUE DE RÉVÉLATION D'ÉQUIPE ---------------- */
+const CINEMATIC_PHRASES = {
+  potter: "Le Choixpeau vous a réunis. Une ancienne magie protège désormais votre équipe.",
+  casa: "Le braquage commence maintenant. Faites confiance à vos complices... mais jamais complètement.",
+  batman: "Gotham compte sur vous. Chaque décision peut sauver... ou condamner votre équipe.",
+  aventuriers: "Une relique oubliée vous attend. Les autres équipes sont déjà sur votre piste.",
+  tarzan: "La jungle n'appartient qu'aux plus malins. Survivrez-vous jusqu'à la fin de la nuit ?"
+};
+function playCinematic(team, onDone){
+  try{ if (window.AudioFX) AudioFX.ensureCtx(); } catch(e){}
+  const overlay = document.createElement("div");
+  overlay.className = "cinematic-overlay";
+  document.body.appendChild(overlay);
+  const steps = [
+    { html: `<div class="cine-line">⚡ Connexion...</div>`, wait: 1300 },
+    { html: `<div class="cine-title">ÉQUIPE IDENTIFIÉE</div>`, sfx:"chest", wait: 1500 },
+    { html: `<div class="cine-logo">${TEAM_EMOJI[team.theme]}</div><div class="cine-title" style="font-size:1.5rem;">${team.nom}</div>`, sfx:"victory", ambient:true, wait: 1900 },
+    { html: `<div class="cine-phrase">${CINEMATIC_PHRASES[team.theme]||""}</div>`, wait: 3400 }
+  ];
+  let i = 0;
+  function next(){
+    if (i >= steps.length){
+      overlay.classList.add("cine-out");
+      setTimeout(()=>{ overlay.remove(); if (onDone) onDone(); }, 600);
+      return;
+    }
+    const step = steps[i];
+    overlay.innerHTML = step.html;
+    if (step.sfx && window.AudioFX) { try{ AudioFX.play(step.sfx, team.theme); }catch(e){} }
+    if (step.ambient) engageAmbient(team.theme);
+    i++;
+    setTimeout(next, step.wait);
+  }
+  next();
 }
 
 /* ---------------- TOASTS ---------------- */
@@ -190,9 +238,8 @@ function renderPlayer(playerId){
     if (ok){
       localStorage.setItem("bng_validated_"+playerId, "1");
       playBeep("success");
-      $("validate-result").innerHTML = `<div class="msg ok pop-in">✅ Équipe validée. Votre mission peut commencer.</div>
-        <button class="btn-block btn-success" style="margin-top:8px;" id="goto-team-btn-2">Entrer dans l'espace équipe</button>`;
-      $("goto-team-btn-2").onclick = ()=> window.location.href = `index.html?team=${player.team}`;
+      $("validate-result").innerHTML = `<div class="msg ok pop-in">✅ Équipe validée. Votre mission peut commencer.</div>`;
+      playCinematic(team, ()=> window.location.href = `index.html?team=${player.team}`);
     } else {
       playBeep("fail");
       const msg = FAIL_MESSAGES[Math.floor(Math.random()*FAIL_MESSAGES.length)];
@@ -216,25 +263,49 @@ function renderTeam(teamId){
   document.body.setAttribute("data-theme", team.theme);
   clearTeamListeners();
 
+  engageAmbient(team.theme);
+  const ambientUnlock = ()=> engageAmbient(team.theme);
+  document.addEventListener("click", ambientUnlock, { once:true });
+  document.addEventListener("touchstart", ambientUnlock, { once:true });
+  _teamListeners.push(()=>{
+    document.removeEventListener("click", ambientUnlock);
+    document.removeEventListener("touchstart", ambientUnlock);
+  });
+
   Store.ensureTeam(teamId).then(()=>{
     let currentTeamData = null;
     let currentConfig = { verreAssignment:{}, challengeAssignment:{} };
+    let currentMarket = [];
     let loadStartTs = Date.now();
     let shownEventIds = new Set();
+    let minuitFiring = false;
 
-    const rerender = ()=> { if (currentTeamData) paintTeam(teamId, team, currentTeamData, currentConfig); };
+    const rerender = ()=> { if (currentTeamData) paintTeam(teamId, team, currentTeamData, currentConfig, currentMarket); };
 
     _teamListeners.push(Store.listenTeam(teamId, (data)=>{ currentTeamData = data; rerender(); }));
     _teamListeners.push(Store.listenConfig((cfg)=>{ currentConfig = cfg||currentConfig; rerender(); }));
+    _teamListeners.push(Store.listenMarket((offers)=>{ currentMarket = offers; rerender(); }));
     _teamListeners.push(Store.listenEvents(teamId, (events)=>{
       events.forEach(e=>{
         const key = e.id || e.timestamp;
         if (e.timestamp >= loadStartTs && !shownEventIds.has(key)){
           shownEventIds.add(key);
           toast("🌩️ "+(e.title||"Événement"), e.message||"", e.type==="danger"?"fail":"success");
+          if (window.AudioFX) { try{ AudioFX.play("event", team.theme); }catch(err){} }
         }
       });
     }));
+
+    // Vérification périodique pour le déclenchement automatique de l'Opération Minuit
+    const minuitCheck = setInterval(async ()=>{
+      if (minuitFiring) return;
+      if (!currentConfig || !currentConfig.minuitAutoEnabled || currentConfig.minuitTriggered) return;
+      if (new Date().getHours() === 0){
+        minuitFiring = true;
+        await Store.triggerMinuit(TEAM_ORDER);
+      }
+    }, 15000);
+    _teamListeners.push(()=> clearInterval(minuitCheck));
   });
 }
 
@@ -243,20 +314,55 @@ function missionListFor(teamId){
 }
 
 function getMissionDef(missionId){
-  return GAME_DATA.commonMissions[missionId] || GAME_DATA.missions[missionId];
+  return GAME_DATA.commonMissions[missionId] || GAME_DATA.missions[missionId] || GAME_DATA.finalMissions[missionId];
 }
 
-function paintTeam(teamId, team, data, config){
+let _soundState = {};
+let _soundFired = {}; // garde idempotente : {teamId: {doneCount:Set, unlockedCount:Set, minuit:bool}}
+function paintTeam(teamId, team, data, config, market){
+  market = market || [];
   const missions = missionListFor(teamId);
   const unlockedCount = data.unlockedCount || 1;
   const completed = data.completed || {};
   const doneCount = Object.values(completed).filter(c=>c.status==="done").length;
+
+  // Effets sonores déclenchés par un changement d'état (validation, déblocage, minuit)
+  // Gardes idempotentes par valeur atteinte : évite tout doublon même si paintTeam
+  // est appelé plusieurs fois de suite pour le même changement de donnée.
+  if (window.AudioFX){
+    const fired = _soundFired[teamId] = _soundFired[teamId] || { doneCounts:new Set(), unlockedCounts:new Set(), minuit:false };
+    const prev = _soundState[teamId];
+    const minuitNow = !!(config && config.minuitTriggered);
+    if (prev && doneCount > prev.doneCount && !fired.doneCounts.has(doneCount)){
+      fired.doneCounts.add(doneCount);
+      try{ AudioFX.play("validation", team.theme); }catch(e){}
+    }
+    if (prev && unlockedCount > prev.unlockedCount && !fired.unlockedCounts.has(unlockedCount)){
+      fired.unlockedCounts.add(unlockedCount);
+      try{ AudioFX.play("chest", team.theme); }catch(e){}
+    }
+    if (minuitNow && !fired.minuit){
+      fired.minuit = true;
+      try{ AudioFX.play("victory", team.theme); }catch(e){}
+    }
+    _soundState[teamId] = { doneCount, unlockedCount, minuitTriggered: minuitNow };
+  }
   const totalMissions = missions.length;
   const progressPct = Math.round((doneCount/totalMissions)*100);
   const blocked = data.blockedUntil && data.blockedUntil > Date.now();
   const protectedActive = data.protectedUntil && data.protectedUntil > Date.now();
+  const minuit = config && config.minuitTriggered;
 
-  let html = `
+  let html = "";
+
+  if (minuit){
+    html += `<div class="card pulse" style="border-color:var(--danger); background:linear-gradient(135deg, rgba(255,90,95,.18), rgba(0,0,0,.1)); text-align:center;">
+      <h2 style="color:var(--danger); margin-bottom:4px;">🚨 OPÉRATION MINUIT 🚨</h2>
+      <p class="dim">Classement gelé. Protections supprimées. Pouvoirs réutilisables. La mission finale est ouverte plus bas.</p>
+    </div>`;
+  }
+
+  html += `
     <div class="team-header">
       <div class="emoji">${TEAM_EMOJI[teamId]}</div>
       <span class="badge">${team.membres.map(m=>GAME_DATA.players[m].nom).join(" & ")}</span>
@@ -291,6 +397,27 @@ function paintTeam(teamId, team, data, config){
     </button>
   </div>`;
 
+  // Contrat secret (visible uniquement par cette équipe)
+  const contract = data.secretContract;
+  if (contract && (contract.status === "active" || contract.status === "pending")){
+    html += `<div class="card pop-in" style="border-color:var(--warning);">
+      <span class="badge pending">🕵️ Contrat secret</span>
+      <h3>${contract.title}</h3>
+      <p>${contract.description}</p>
+      <p class="dim">📈 ${contract.points} points · Les autres équipes ne savent pas que ce contrat existe.</p>
+      ${contract.status === "pending"
+        ? `<p class="msg ok">En attente de validation par l'organisatrice…</p>`
+        : `<button class="btn-block" id="secret-contract-btn">Valider le contrat</button>`}
+    </div>`;
+  }
+
+  // Mission finale — Opération Minuit
+  if (data.minuitFinalUnlocked){
+    const finalId = "final-" + teamId;
+    html += `<h2 style="margin-top:22px;">🚨 Mission finale</h2>`;
+    html += renderMissionCard(teamId, finalId, 0, 999, completed, config, true);
+  }
+
   // Missions
   html += `<h2 style="margin-top:22px;">🎯 Missions</h2>`;
   missions.forEach((mid, idx)=>{
@@ -305,12 +432,31 @@ function paintTeam(teamId, team, data, config){
     });
   }
 
+  // Marché Noir
+  const openOffers = market.filter(o=>o.status==="open");
+  html += `<h2 style="margin-top:22px;">🖤 Marché Noir</h2>
+    <p class="dim">Indices, objets, points, protections, alliances, faveurs... tout se négocie. Publiez une offre ou répondez à celle d'une autre équipe.</p>
+    <button class="btn-block btn-outline" id="market-post-btn" style="margin-bottom:12px;">+ Publier une offre</button>`;
+  if (!openOffers.length){
+    html += `<p class="dim">Aucune offre en ce moment.</p>`;
+  } else {
+    openOffers.forEach(o=>{
+      const mine = o.teamId === teamId;
+      const offerTeam = GAME_DATA.teams[o.teamId];
+      html += `<div class="card">
+        <span class="badge">${offerTeam ? offerTeam.nom : o.teamId}${mine ? " · votre offre" : ""}</span>
+        <h3>${o.title}</h3>
+        ${o.description ? `<p>${o.description}</p>` : ""}
+        ${o.wants ? `<p class="dim">En échange : ${o.wants}</p>` : ""}
+        ${mine ? "" : `<button class="btn-block btn-sm" data-interest="${o.id}:${o.teamId}:${(o.title||"").replace(/"/g,'&quot;')}">Je suis intéressée</button>`}
+      </div>`;
+    });
+  }
+
   html += `
-    <div class="row between" style="margin-top:20px;">
-      <button class="btn-outline btn-sm" id="sound-toggle-btn">${soundEnabled() ? "🔊 Son activé" : "🔇 Son coupé"}</button>
-    </div>
     <div class="a2hs">Ajoute cette page à ton écran d'accueil (Partager → Sur l'écran d'accueil) pour la retrouver toute la soirée.</div>
     <footer class="site">Brest Night Game · ${team.nom}</footer>
+    <button class="sound-toggle-btn" id="sound-toggle-btn" title="Couper / activer le son">${(window.AudioFX && AudioFX.isMuted()) ? "🔇" : "🔊"}</button>
   `;
 
   $("app").innerHTML = html;
@@ -327,13 +473,73 @@ function paintTeam(teamId, team, data, config){
     }
   }
 
-  $("sound-toggle-btn").onclick = ()=>{ toggleSound(); $("sound-toggle-btn").textContent = soundEnabled() ? "🔊 Son activé" : "🔇 Son coupé"; };
+  $("sound-toggle-btn").onclick = ()=>{
+    engageAmbient(team.theme);
+    const nowMuted = window.AudioFX ? AudioFX.toggleMuted() : false;
+    $("sound-toggle-btn").textContent = nowMuted ? "🔇" : "🔊";
+  };
 
   const powerBtn = $("power-btn");
-  if (powerBtn && !data.powerUsed) powerBtn.onclick = ()=> openPowerModal(teamId, team, data);
+  if (powerBtn && !data.powerUsed) powerBtn.onclick = ()=>{
+    if (window.AudioFX) { try{ AudioFX.play("power", team.theme); }catch(e){} }
+    openPowerModal(teamId, team, data);
+  };
 
   missions.forEach((mid)=> wireMissionCard(teamId, mid, unlockedCount, completed, blocked));
   if (data.extraMissions) data.extraMissions.forEach(mid=> wireMissionCard(teamId, mid, 999, completed, blocked));
+  if (data.minuitFinalUnlocked) wireMissionCard(teamId, "final-"+teamId, 999, completed, blocked);
+
+  const contractBtn = $("secret-contract-btn");
+  if (contractBtn) contractBtn.onclick = ()=> openSecretContractModal(teamId, contract);
+
+  const marketPostBtn = $("market-post-btn");
+  if (marketPostBtn) marketPostBtn.onclick = ()=> openMarketPostModal(teamId);
+
+  document.querySelectorAll("[data-interest]").forEach(b=>{
+    b.onclick = async ()=>{
+      const [offerId, offerTeamId, title] = b.dataset.interest.split(":");
+      b.disabled = true; b.textContent = "Intérêt envoyé !";
+      await Store.expressInterest(offerTeamId, teamId, title);
+    };
+  });
+}
+
+function openSecretContractModal(teamId, contract){
+  openModal(`
+    <h2>🕵️ ${contract.title}</h2>
+    <p>${contract.description}</p>
+    <label>Note / preuve</label>
+    <textarea id="secret-note" placeholder="Racontez comment vous avez rempli le contrat..."></textarea>
+    <button class="btn-block" id="secret-submit-btn">Envoyer à l'organisatrice</button>
+    <p class="dim" id="secret-status" style="margin-top:8px;"></p>
+  `);
+  $("secret-submit-btn").onclick = async ()=>{
+    const note = $("secret-note").value.trim();
+    await Store.submitSecretContractProof(teamId, note);
+    $("secret-status").textContent = "✅ Envoyé ! En attente de validation par l'organisatrice.";
+    toast("🕵️ Contrat envoyé", "En attente de validation.", "success");
+    setTimeout(closeModal, 1200);
+  };
+}
+
+function openMarketPostModal(teamId){
+  openModal(`
+    <h2>🖤 Publier une offre</h2>
+    <label>Titre de l'offre</label>
+    <input type="text" id="market-title" placeholder="Ex: Vends un indice sur Batman">
+    <label>Description</label>
+    <textarea id="market-desc" placeholder="Détaillez votre offre..."></textarea>
+    <label>En échange de quoi ?</label>
+    <input type="text" id="market-wants" placeholder="Ex: 15 points, ou une faveur, ou une alliance...">
+    <button class="btn-block" id="market-submit-btn">Publier</button>
+  `);
+  $("market-submit-btn").onclick = async ()=>{
+    const title = $("market-title").value.trim();
+    if (!title){ return; }
+    await Store.postMarketOffer(teamId, title, $("market-desc").value.trim(), $("market-wants").value.trim());
+    toast("🖤 Offre publiée", "Visible par toutes les équipes.", "success");
+    closeModal();
+  };
 }
 
 function renderMissionCard(teamId, missionId, idx, unlockedCount, completed, config, isExtra){
@@ -369,12 +575,26 @@ function renderMissionCard(teamId, missionId, idx, unlockedCount, completed, con
   let statusBadge = "";
   let bodyExtra = "";
   let cardClass = "card pop-in";
+  const isChoix = def.type === "choix";
+
   if (state && state.status === "done"){
     cardClass += " done";
-    statusBadge = `<span class="badge done">✅ Validée</span>`;
+    if (isChoix){
+      statusBadge = state.win
+        ? `<span class="badge done">✅ Réussi (+${state.points} pts)</span>`
+        : `<span class="badge" style="background:var(--danger);color:#fff;">💥 Raté (${state.points} pts)</span>`;
+    } else {
+      statusBadge = `<span class="badge done">✅ Validée</span>`;
+    }
   } else if (state && state.status === "rejected"){
     statusBadge = `<span class="badge">❌ Refusée</span>`;
     bodyExtra = `<button class="btn-block btn-sm" data-retry="${missionId}">Réessayer</button>`;
+  } else if (isChoix){
+    bodyExtra = `
+      <div class="grid-2">
+        <button class="btn-block btn-outline" data-safe="${missionId}">🔒 Sécuriser ${def.safePoints} pts</button>
+        <button class="btn-block btn-danger" data-risky="${missionId}">🎲 Parier (${def.riskWin>0?'+':''}${def.riskWin} / ${def.riskLose})</button>
+      </div>`;
   } else {
     // check pending — géré via listenProofs séparé, on affiche juste le bouton
     bodyExtra = `<button class="btn-block" data-submit="${missionId}">✔️ Valider la mission</button>`;
@@ -386,7 +606,7 @@ function renderMissionCard(teamId, missionId, idx, unlockedCount, completed, con
     <h3>${def.titre}</h3>
     <p>${desc}</p>
     ${def.duree ? `<p class="dim">⏱️ ${def.duree}</p>` : ""}
-    ${def.preuve ? `<p class="dim">📸 Preuve : ${def.preuve}</p>` : ""}
+    ${(def.preuve && !isChoix) ? `<p class="dim">📸 Preuve : ${def.preuve}</p>` : ""}
     <div data-actions="${missionId}">${bodyExtra}</div>
   </div>`;
 }
@@ -399,6 +619,28 @@ function wireMissionCard(teamId, missionId, unlockedCount, completed, blocked){
   }
   const retry = document.querySelector(`[data-retry="${missionId}"]`);
   if (retry){ retry.disabled = !!blocked; retry.onclick = ()=> openProofModal(teamId, missionId); }
+
+  const safeBtn = document.querySelector(`[data-safe="${missionId}"]`);
+  const riskyBtn = document.querySelector(`[data-risky="${missionId}"]`);
+  if (safeBtn){
+    safeBtn.disabled = !!blocked;
+    safeBtn.onclick = ()=> resolveChoice(teamId, missionId, "safe");
+  }
+  if (riskyBtn){
+    riskyBtn.disabled = !!blocked;
+    riskyBtn.onclick = ()=> resolveChoice(teamId, missionId, "risky");
+  }
+}
+
+async function resolveChoice(teamId, missionId, choice){
+  const def = getMissionDef(missionId);
+  if (choice === "risky" && !confirm(`Tenter le pari ? Gain possible : +${def.riskWin} pts. Risque : ${def.riskLose} pts.`)) return;
+  const res = await Store.resolveChoiceMission(teamId, missionId, choice, def);
+  if (res.win){
+    toast("🎉 Réussi !", `+${res.points} points`, "success");
+  } else {
+    toast("💥 Raté...", `${res.points} points`, "fail");
+  }
 }
 
 function openProofModal(teamId, missionId){
