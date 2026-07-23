@@ -1,0 +1,13 @@
+{
+  "name": "brest-night-functions",
+  "description": "Cloud Functions pour l'envoi des notifications push du jeu Opération Brest 2026",
+  "main": "index.js",
+  "engines": {
+    "node": "20"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.1.0",
+    "firebase-functions": "^5.0.0"
+  },
+  "private": true
+}
