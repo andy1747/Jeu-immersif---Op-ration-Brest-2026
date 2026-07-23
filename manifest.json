@@ -1,9 +1,0 @@
-{
-  "name": "Brest Night Game",
-  "short_name": "Brest Night",
-  "start_url": "./index.html",
-  "display": "standalone",
-  "background_color": "#0b0b14",
-  "theme_color": "#0b0b14",
-  "icons": []
-}
