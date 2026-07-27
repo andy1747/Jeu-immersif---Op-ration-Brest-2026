@@ -313,34 +313,36 @@ const GAME_DATA = {
   // ---------------------------------------------------------------
   // MISSIONS PAR ÉQUIPE (chapitre 1) + QUIZ IPC (chapitre 3, commun).
   // Chapitre 1 = univers vraiment dédié à chaque équipe : même point de
-  // départ narratif (interroger Roland Kerdoncuff, directeur financier
-  // d'Armorik Biotech, avant son départ), mais une façon de s'y prendre
-  // totalement différente selon l'identité de la cellule :
-  //   - Casa de Papel      → bluff, ruse, faux prétexte (négociation/humour)
-  //   - Harry Potter        → sortilège/formule magique (mystère/duel verbal)
-  //   - Batman & Robin      → filature chronométrée + mime (observation)
+  // départ narratif (Roland Kerdoncuff, directeur financier d'Armorik
+  // Biotech, ne reste que quelques minutes avant son départ précipité),
+  // mais une façon de s'y prendre totalement différente selon l'identité
+  // de la cellule — TOUJOURS un travail d'équipe collectif, jamais une
+  // seule personne sommée de tenir un rôle ou d'arracher des confidences :
+  //   - Casa de Papel      → faux prétexte inventé collectivement (bluff/humour)
+  //   - Harry Potter        → déchiffrer un message laissé par Roland (logique)
+  //   - Batman & Robin      → filature chronométrée + mime (observation d'équipe)
   //   - Lara Croft/Indiana  → exploration de terrain + preuve (découverte)
-  //   - Tarzan & Jane       → rituel bruyant/énergique (ambiance/communication)
+  //   - Tarzan & Jane       → posture/signal synchronisé chronométré (instinct de groupe)
   // Le chapitre 2 (banque commune tirée au sort) et le chapitre 3 (Quiz
   // IPC) restent communs à toutes les équipes : c'est la partie "banque
   // commune" du mix dédié + commune demandé.
   // ---------------------------------------------------------------
   missions: {
     "casa-1": { id:"casa-1", team:"casa", titre:"Le Bluff de Roland", points:15, chapitre:1,
-      description:"Roland Kerdoncuff, directeur financier d'Armorik Biotech, se méfie de toutes les questions directes. Approchez-le sous un faux prétexte de votre invention — un faux titre, une fausse mission officielle, l'argument commercial le plus culotté possible — et obtenez de lui au moins une information utile sur la nuit du vol. Aucune vérité obtenue frontalement ne compte : il faut la ruse.",
-      penalite:"Aucune, mais un bluff trop timide obtient une réponse bien moins utile." },
-    "potter-1": { id:"potter-1", team:"potter", titre:"Le Sortilège de Vérité", points:15, chapitre:1,
-      description:"Roland Kerdoncuff ne se livrera qu'à qui saura le charmer. Composez à voix haute, avec tout le sérieux d'un vrai sortilège, une formule d'au moins trois vers mêlant deux noms de produits IPC — puis récitez-la devant lui pour délier sa langue sur la nuit du vol.",
-      penalite:"Aucune, mais un sortilège improvisé sans conviction obtient une réponse bien moins utile." },
+      description:"Roland Kerdoncuff, directeur financier d'Armorik Biotech, se méfie de toutes les questions directes. Toute l'équipe invente ensemble, en 1 minute chrono, un faux prétexte crédible (faux titre, fausse mission officielle, argument commercial culotté) puis va l'aborder à plusieurs pour en tirer au moins une information utile sur la nuit du vol.",
+      penalite:"Aucune, mais un prétexte improvisé sans concertation d'équipe obtient une réponse bien moins utile." },
+    "potter-1": { id:"potter-1", team:"potter", titre:"La Formule Retrouvée", points:15, chapitre:1,
+      description:"Avant de filer, Roland glisse à votre équipe un vieux parchemin où il a griffonné à la va-vite deux noms de produits IPC, lettres inversées : « MROTS » et « XOTOI ». Déchiffrez-les ensemble à voix haute, puis présentez votre trouvaille à Roland pour obtenir en échange une information sur la nuit du vol.",
+      penalite:"Aucune, mais un déchiffrage incomplet obtient une réponse bien moins précise." },
     "batman-1": { id:"batman-1", team:"batman", titre:"Filature Chronométrée", points:15, chapitre:1,
-      description:"Vous avez 3 minutes chrono pour observer discrètement Roland Kerdoncuff et repérer un détail qui trahit sa nervosité (un tic, un regard, un mot répété). Une fois le temps écoulé, mimez ce détail devant votre équipe sans un mot : si tout le monde devine, la piste est confirmée et vous pouvez l'interroger.",
+      description:"Vous avez 3 minutes chrono pour observer discrètement Roland Kerdoncuff et repérer un détail qui trahit sa nervosité (un tic, un regard, un mot répété). Une fois le temps écoulé, mimez ce détail devant votre équipe sans un mot : si tout le monde devine, la piste est confirmée et Roland vous laisse repartir avec une information sur la nuit du vol.",
       penalite:"Aucune, mais une observation trop vague obtient une réponse bien moins utile." },
     "aventuriers-1": { id:"aventuriers-1", team:"aventuriers", titre:"L'Indice du Terrain", points:15, chapitre:1,
-      description:"Avant de questionner Roland Kerdoncuff, prouvez votre connaissance du terrain : partez explorer les environs immédiats et rapportez une preuve concrète (photo, objet, observation précise) d'un détail lié à IPC ou à son histoire. Revenez ensuite l'interroger, preuve à l'appui.",
+      description:"Avant de repartir voir Roland Kerdoncuff, prouvez votre connaissance du terrain : partez explorer les environs immédiats et rapportez une preuve concrète (photo, objet, observation précise) d'un détail lié à IPC ou à son histoire. Présentez ensuite votre preuve à Roland, qui vous confie en échange une information sur la nuit du vol.",
       penalite:"Aucune, mais revenir sans preuve concrète obtient une réponse bien moins utile." },
-    "tarzan-1": { id:"tarzan-1", team:"tarzan", titre:"Le Rituel de la Jungle", points:15, chapitre:1,
-      description:"Roland Kerdoncuff est tendu depuis le début de soirée. Détendez-le avant de l'interroger : inventez un petit rituel bruyant et énergique (cri de ralliement, pas de danse, chant d'équipe) à exécuter devant lui, puis obtenez ses confidences sur la nuit du vol.",
-      penalite:"Aucune, mais un rituel trop discret obtient une réponse bien moins utile." },
+    "tarzan-1": { id:"tarzan-1", team:"tarzan", titre:"Le Signal du Clan", points:15, chapitre:1,
+      description:"Roland ne va pas s'attarder. Sans un mot pour vous concerter à voix haute, toute l'équipe doit se figer en même temps dans une seule posture commune de repérage (bras tendus, doigts pointés, regard fixe — à vous de choisir, mais tout le monde doit faire pareil), en 15 secondes chrono à partir du top départ. Si l'équipe est parfaitement synchronisée, Roland est impressionné et livre une information sur la nuit du vol avant de partir.",
+      penalite:"Aucune, mais une posture non synchronisée obtient une information bien moins précise." },
 
     // Remplace la mission de chapitre 3 de chaque équipe. Score dynamique
     // (pas de "points" fixe) : voir type "quiz" dans app.js/store.js.
@@ -479,6 +481,47 @@ const GAME_DATA = {
         options:["Belgique puis Espagne","Allemagne puis Italie","Suisse puis Portugal"], correct:0,
         explanation:"Bureaux ouverts en Belgique en 2010, puis en Espagne en 2018." },
 
+      // ===================== 🔎 DÉFIS D'ENQUÊTE (kind: action / quiz1) =====================
+      // Ambiance "aventure immersive" : chercher un indice, décoder un message,
+      // retrouver une information (souvent auprès d'une autre équipe — ça fait
+      // circuler tout le monde et ça crée des interactions), assembler des
+      // éléments, observer un détail, résoudre une petite énigme. Rien qui ne
+      // dépende d'une seule personne : toujours un travail d'équipe, jamais
+      // de performance imposée à un seul joueur.
+      { id:"enq-01", category:"enquete", kind:"action", titre:"Info Croisée", points:15,
+        description:"Une autre équipe détient, sans le savoir, une information utile sur Armorik Biotech ou la nuit du vol. Allez discuter avec elle et repartez avec un détail que vous ignoriez." },
+      { id:"enq-02", category:"enquete", kind:"action", titre:"Message Inversé", points:15,
+        description:"Le voleur a laissé ce message codé — chaque mot est écrit à l'envers, lettre par lettre : « ZELLIEVRUS AL EITROS DRON ». Déchiffrez-le en équipe, puis annoncez la phrase complète pour valider." },
+      { id:"enq-03", category:"enquete", kind:"action", titre:"L'Objet qui Dépare", points:10,
+        description:"Repérez, dans la salle, un objet qui n'a rien à voir avec IPC ni avec la soirée. Montrez-le (ou prenez-le en photo) pour valider votre sens de l'observation." },
+      { id:"enq-04", category:"enquete", kind:"action", titre:"Portrait-Robot Express", points:15,
+        description:"Récoltez un détail (vêtement, accessoire, attitude) auprès de membres de trois équipes différentes, puis assemblez-les à voix haute en un portrait-robot imaginaire du voleur. Le plus convaincant marque les points." },
+      { id:"enq-05", category:"enquete", kind:"action", titre:"Le Dossier Manquant", points:15,
+        description:"Une pièce du dossier d'enquête vous manque. Une autre équipe la détient sans le savoir : posez-lui 3 questions maximum, sans jamais dire pourquoi, pour deviner laquelle." },
+      { id:"enq-06", category:"enquete", kind:"quiz1", titre:"Calcul du Coffre", points:10,
+        question:"Un vieux coffre d'Armorik Biotech porte un indice retrouvé dans les archives : son code est le double de 21, moins 9. Quel est ce nombre ?",
+        options:["33","31","39"], correct:0, explanation:"21 × 2 = 42, puis 42 − 9 = 33." },
+      { id:"enq-07", category:"enquete", kind:"action", titre:"Compte les Indices", points:10,
+        description:"Observez les chaussures de tous les membres de votre équipe : combien de couleurs différentes comptez-vous en tout ? Annoncez le nombre exact." },
+      { id:"enq-08", category:"enquete", kind:"action", titre:"Témoin Surprise", points:15,
+        description:"Trouvez un témoin (n'importe quel collègue présent, pas Roland) et posez-lui 3 questions fermées (oui/non) improvisées sur ce qu'il aurait vu la nuit du vol. Assemblez ses réponses en une théorie à présenter à voix haute." },
+      { id:"enq-09", category:"enquete", kind:"action", titre:"Repérage Terrain", points:10,
+        description:"Déplacez-vous jusqu'à un point précis du lieu (l'entrée, le bar, ou une sortie) et repérez-y un détail que vous n'aviez pas remarqué avant. Décrivez-le à votre équipe pour valider." },
+      { id:"enq-10", category:"enquete", kind:"quiz1", titre:"L'Alibi", points:15,
+        question:"Trois suspects donnent un alibi. Le Comptable : « J'étais avec la Stagiaire. » La Stagiaire : « J'étais seule. » Le Gardien : « J'ai vu le Comptable ET la Stagiaire, séparément. » Qui ment ?",
+        options:["Le Comptable","La Stagiaire","Le Gardien"], correct:0,
+        explanation:"Le Gardien confirme avoir vu les deux suspects séparément, ce qui contredit directement l'alibi du Comptable prétendant avoir été avec la Stagiaire." },
+      { id:"enq-11", category:"enquete", kind:"action", titre:"Puzzle à Quatre", points:20,
+        description:"Récoltez un mot-indice auprès de chacune des autres équipes présentes (jusqu'à 4 mots), puis assemblez-les en une phrase qui a un sens, même approximatif. Présentez-la pour valider." },
+      { id:"enq-12", category:"enquete", kind:"action", titre:"Trouve le Détail Commun", points:10,
+        description:"Observez discrètement deux équipes adverses : trouvez un point commun visuel entre elles (couleur, accessoire, posture...) que personne n'a signalé. Annoncez-le pour valider." },
+      { id:"enq-13", category:"enquete", kind:"action", titre:"La Carte au Trésor", points:15,
+        description:"Un indice sur la nuit du vol est caché quelque part dans la salle (au sens propre ou déguisé en objet anodin). Partez le chercher en équipe et rapportez-le pour valider." },
+      { id:"enq-14", category:"enquete", kind:"quiz1", titre:"Le Faux Numéro", points:10,
+        question:"Sur un ticket retrouvé près d'Armorik Biotech figure l'heure « 23:65 ». Pourquoi cette heure est-elle forcément fausse ?",
+        options:["Les minutes ne dépassent jamais 59","Il ne peut pas être 23h un jour de semaine","Le ticket est trop vieux pour être lisible"], correct:0,
+        explanation:"Une heure valide ne peut jamais afficher plus de 59 minutes — le ticket est un faux, ou mal recopié." },
+
       // ===================== 🎤 DÉFIS COMMERCIAUX (kind: action) =====================
       { id:"com-01", category:"commercial", kind:"action", titre:"Pitch Éclair", points:15,
         description:"Faites une démonstration improvisée d'un produit IPC de votre choix en 30 secondes chrono, comme si vous étiez sur un salon professionnel." },
@@ -543,7 +586,7 @@ const GAME_DATA = {
       { id:"mini-bonus-01", category:"minijeu", kind:"action", titre:"Défi Bonus Caché", points:20,
         description:"Bonus caché : improvisez un jingle publicitaire de 10 secondes pour IPC, à fredonner devant une autre équipe." },
       { id:"mini-bonus-02", category:"minijeu", kind:"action", titre:"Défi Bonus Caché", points:20,
-        description:"Bonus caché : inventez un cri de ralliement d'équipe sur le thème IPC, et faites-le crier par tout le monde." },
+        description:"Bonus caché : en 60 secondes chrono, toute l'équipe doit inventer une phrase-code de 7 mots où chaque mot commence, dans l'ordre, par une lettre du nom « TORNADE » (T-O-R-N-A-D-E). Présentez-la à voix haute une fois trouvée." },
       { id:"mini-roue-01", category:"minijeu", kind:"roue", titre:"Roue du Hasard", points:0,
         description:"Lancez la roue et laissez le sort décider du sort de votre équipe !",
         outcomes: [
@@ -553,6 +596,20 @@ const GAME_DATA = {
           { label:"+5 points, pas mal", points:5 },
           { label:"Rejoué : ce tour ne compte pas", points:0 },
           { label:"-5 points, dommage", points:-5 }
+        ] },
+      // Variante ambiance "apéro" de la Roue du Hasard, purement facultative :
+      // les résultats évoquent la boisson pour le folklore, mais rien n'est
+      // jamais compté ni imposé côté appli — chacun fait ce qu'il veut du
+      // résultat (soft accepté, ou rien du tout).
+      { id:"mini-roue-02", category:"minijeu", kind:"roue", titre:"Roue du Destin (Ambiance)", points:0,
+        description:"Lancez la roue de l'ambiance ! Le résultat est à prendre à la légère — libre à chacun d'accepter une petite gorgée (soft ou alcool, comme on veut) ou de simplement en rire.",
+        outcomes: [
+          { label:"Gorgée facultative (soft accepté) + 15 points", points:15 },
+          { label:"Joker : personne ne boit, +15 points", points:15 },
+          { label:"Bonus surprise ! +20 points", points:20 },
+          { label:"Toast collectif improvisé, +10 points", points:10 },
+          { label:"Rejoué : ce tour ne compte pas", points:0 },
+          { label:"-5 points, la roue est cruelle", points:-5 }
         ] },
 
       // Jeu des 7 différences — deux photos souvenirs fournies par Andreia,
@@ -573,15 +630,16 @@ const GAME_DATA = {
     // des défis du chapitre 2 : jamais le même tirage deux fois, ni
     // forcément le même d'une équipe à l'autre. Pas de bouton "Passer".
     //
-    // ⚠️ Consigne explicite d'Andreia, à ne jamais enfreindre : l'appli
-    // ne doit JAMAIS obliger qui que ce soit à boire ni gérer une
-    // quelconque consommation d'alcool (pas de "cul sec", pas de
-    // compteur de gorgées, pas de pénalité liée à la boisson). Ces
-    // défis sont purement des animations d'ambiance "apéro" — porter un
-    // toast, trinquer, voter, prendre une photo, imaginer un nom/slogan
-    // — chacun restant libre de le faire avec une boisson alcoolisée ou
-    // non. Le seul contenu noté est la mission elle-même (l'idée, la
-    // photo, le vote...), jamais la consommation.
+    // ⚠️ Consigne explicite d'Andreia, à ne jamais enfreindre : certains
+    // défis évoquent volontairement des jeux d'ambiance autour des
+    // boissons (trinquer, cul sec, pierre-feuille-ciseaux, roue du
+    // destin...), mais TOUJOURS de façon facultative, avec alternative
+    // sans alcool acceptée (un soft compte exactement pareil). L'appli
+    // elle-même ne compte, ne gère ni ne pénalise jamais la consommation
+    // d'alcool : aucun compteur de gorgées obligatoire, aucune pénalité
+    // de points liée au fait de boire ou non. Le seul contenu noté est
+    // la mission elle-même (l'idée, la photo, le vote, la manche
+    // gagnée...), jamais la consommation en tant que telle.
     // ---------------------------------------------------------------
     festifsDrawCount: 4,
     festifs: [
@@ -612,7 +670,29 @@ const GAME_DATA = {
       { id:"fest-13", titre:"Merci à l'Organisatrice", points:10,
         description:"Allez trinquer avec l'organisatrice de la soirée et remerciez-la, à votre façon." },
       { id:"fest-14", titre:"Le Chant Convivial", points:15,
-        description:"Improvisez une courte phrase chantée ou scandée dédiée à IPC, et faites-la reprendre par une autre équipe." }
+        description:"Improvisez une courte phrase chantée ou scandée dédiée à IPC, et faites-la reprendre par une autre équipe." },
+
+      // Jeux d'ambiance "boissons" — toujours facultatifs, toujours avec
+      // alternative sans alcool (soft accepté), jamais de pénalité liée
+      // au choix de chacun. Le seul contenu noté est la mission elle-même.
+      { id:"fest-15", titre:"Le Choix du Rival", points:10,
+        description:"Désignez un membre d'une autre équipe : il ou elle devient officiellement le DJ de votre prochaine boisson, sans droit de veto de votre part ! Facultatif bien sûr, option soft toujours au menu." },
+      { id:"fest-16", titre:"Cul Sec (au choix)", points:10,
+        description:"Défi cul sec façon « chacun sa vitesse » : celles et ceux qui le veulent finissent leur verre d'un coup — alcool, soft, ou même un verre d'eau si le cœur vous en dit. Les autres valident en portant un toast bien théâtral à leur courage." },
+      { id:"fest-17", titre:"Pierre-Feuille-Ciseaux Express", points:10,
+        description:"Duel au sommet contre un membre d'une autre équipe : pierre-feuille-ciseaux, une seule manche, aucun rattrapage possible. Le ou la perdant(e) a le droit sacré (jamais l'obligation) de siroter une petite gorgée, soft ou alcool." },
+      { id:"fest-18", titre:"Santé Générale", points:15,
+        description:"Rameutez le plus d'équipes possible pour un « SANTÉ ! » collectif et synchronisé — plus il y a de monde, plus l'écho est beau. Eau, soft ou pétillant, tout compte pareil." },
+      { id:"fest-19", titre:"Le Dernier Verre Levé", points:10,
+        description:"3, 2, 1 : tout le monde lève son verre en même temps avec au moins une autre équipe (rempli de ce que chacun veut, soft accepté). Le ou la dernier(ère) a « perdu » — perdu quoi exactement, personne ne sait, mais c'est immanquablement drôle." },
+      { id:"fest-20", titre:"Devine Ma Boisson", points:10,
+        description:"Mimez votre boisson à un membre d'une autre équipe façon charades — sans un mot, sans la montrer, sans la nommer. S'il ou elle devine juste, bravo à vous deux." },
+      { id:"fest-21", titre:"Bar Éclair", points:15,
+        description:"Improvisez un cocktail (ou mocktail) avec ce qui traîne sur la table, donnez-lui un nom de produit IPC totalement inventé, et vendez-le à une autre équipe comme le nouveau best-seller de la gamme." },
+      { id:"fest-22", titre:"Le Verre qui Parle", points:10,
+        description:"Donnez une voix à votre verre pendant 10 secondes chrono : imaginez tout haut ce qu'il raconterait de sa soirée s'il pouvait parler. On juge l'humour, pas le talent d'acteur." },
+      { id:"fest-23", titre:"Cheers Autour du Monde", points:10,
+        description:"Trinquez avec une autre équipe en disant « santé » dans une langue étrangère différente à chaque fois. Bonus imagination si personne n'est sûr que le mot existe vraiment." }
     ]
   },
 
